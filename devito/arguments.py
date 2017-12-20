@@ -117,6 +117,10 @@ class ScalarArgument(Argument):
     """
     is_ScalarArgument = True
 
+    def __init__(self, name, provider, dependencies, dtype):
+        super(ScalarArgument, self).__init__(name, dependencies, dtype)
+        self.provider = provider
+
 
 class TensorArgument(Argument):
 
@@ -332,9 +336,9 @@ class ArgumentVisitor(GenericVisitor):
 
     def visit_DimensionParameter(self, o):
         dependency = ValueDependency(o)
-        size = ScalarArgument(o.provider.size_name, [dependency])
-        start = ScalarArgument(o.provider.start_name, [dependency])
-        end = ScalarArgument(o.provider.end_name, [dependency])
+        size = ScalarArgument(o.provider.size_name, o.provider, [dependency], np.int32)
+        start = ScalarArgument(o.provider.start_name, o.provider, [dependency], np.int32)
+        end = ScalarArgument(o.provider.end_name, o.provider, [dependency], np.int32)
         return [size, start, end]
 
     def visit_Object(self, o):
@@ -344,15 +348,11 @@ class ArgumentVisitor(GenericVisitor):
         return TensorArgument(o)
 
     def visit_Scalar(self, o):
-        arg = ScalarArgument(o.name, o, dtype=o.dtype)
-        arg.provider = o
-        return arg
+        return ScalarArgument(o.name, o, o, o.dtype)
 
     def visit_Constant(self, o):
         # TODO: Add option for delayed query of default value
-        arg = ScalarArgument(o.name, [ValueDependency(o)], dtype=o.dtype)
-        arg.provider = o
-        return arg
+        return ScalarArgument(o.name, o, [ValueDependency(o)], o.dtype)
 
 
 class ValueVisitor(GenericVisitor):
